@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/shape.dart';
-import '../../../settings/domain/providers/settings_provider.dart';
-import '../../../../core/theme/app_colors.dart';
 import 'shape_widget.dart';
 
 /// Селектор фигур внизу экрана
-class ShapeSelector extends ConsumerWidget {
+class ShapeSelector extends StatelessWidget {
   final List<GameShape> shapes;
   final Function(GameShape, Offset, Offset) onShapeDragStart; // globalPosition, localPosition
   final Function(GameShape, Offset) onShapeDragUpdate;
   final Function(GameShape) onShapeDragEnd;
+  final Function(GameShape)? onShapeTap; // Для режима удаления
+  final bool isRemovalModeActive;
 
   const ShapeSelector({
     super.key,
@@ -18,18 +17,14 @@ class ShapeSelector extends ConsumerWidget {
     required this.onShapeDragStart,
     required this.onShapeDragUpdate,
     required this.onShapeDragEnd,
+    this.onShapeTap,
+    this.isRemovalModeActive = false,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(settingsProvider.select((s) => s.themeMode == ThemeMode.dark));
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.getSurface(isDark).withValues(alpha: 0.7),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: shapes.asMap().entries.map((entry) {
@@ -50,6 +45,8 @@ class ShapeSelector extends ConsumerWidget {
             onDragStart: (globalPos, localPos) => onShapeDragStart(shape, globalPos, localPos),
             onDragUpdate: (offset) => onShapeDragUpdate(shape, offset),
             onDragEnd: () => onShapeDragEnd(shape),
+            onTap: onShapeTap != null ? () => onShapeTap!(shape) : null,
+            shouldShake: isRemovalModeActive,
           );
         }).toList(),
       ),
@@ -63,6 +60,8 @@ class _DraggableShape extends StatefulWidget {
   final Function(Offset, Offset) onDragStart; // globalPosition, localPosition
   final Function(Offset) onDragUpdate;
   final VoidCallback onDragEnd;
+  final VoidCallback? onTap; // Для режима удаления
+  final bool shouldShake;
 
   const _DraggableShape({
     super.key,
@@ -70,6 +69,8 @@ class _DraggableShape extends StatefulWidget {
     required this.onDragStart,
     required this.onDragUpdate,
     required this.onDragEnd,
+    this.onTap,
+    this.shouldShake = false,
   });
 
   @override
@@ -82,24 +83,33 @@ class _DraggableShapeState extends State<_DraggableShape> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onPanStart: (details) {
+      onTap: widget.onTap != null
+          ? () {
+              // Останавливаем всплытие события, чтобы не сработал GestureDetector экрана
+              widget.onTap!();
+            }
+          : null,
+      // Блокируем всплытие tap события к родительскому GestureDetector
+      behavior: HitTestBehavior.opaque,
+      onPanStart: widget.shouldShake ? null : (details) {
         setState(() => _isDragging = true);
         widget.onDragStart(details.globalPosition, details.localPosition);
       },
-      onPanUpdate: (details) {
+      onPanUpdate: widget.shouldShake ? null : (details) {
         widget.onDragUpdate(details.globalPosition);
       },
-      onPanEnd: (details) {
+      onPanEnd: widget.shouldShake ? null : (details) {
         setState(() => _isDragging = false);
         widget.onDragEnd();
       },
-      onPanCancel: () {
+      onPanCancel: widget.shouldShake ? null : () {
         setState(() => _isDragging = false);
         widget.onDragEnd();
       },
       child: ShapeWidget(
         shape: widget.shape,
         isDragging: _isDragging,
+        shouldShake: widget.shouldShake,
       ),
     );
   }

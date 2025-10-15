@@ -18,6 +18,90 @@ class GameNotifier extends StateNotifier<GameState> {
     state = GameState.initial();
   }
 
+  /// Отменить последний ход
+  void undo() {
+    if (state.undoBoostersCount <= 0) {
+      debugPrint('Undo: Бустеры закончились');
+      return;
+    }
+
+    if (state.history.isEmpty) {
+      debugPrint('Undo: История пуста, нечего отменять');
+      return;
+    }
+
+    // Получаем последнее сохранённое состояние
+    final previousState = state.history.last;
+
+    // Восстанавливаем предыдущее состояние, но сохраняем историю без последнего элемента
+    final newHistory = List<GameState>.from(state.history);
+    newHistory.removeLast();
+
+    // Уменьшаем счётчик бустеров
+    state = previousState.copyWith(
+      history: newHistory,
+      undoBoostersCount: state.undoBoostersCount - 1,
+    );
+    debugPrint('Undo: Восстановлено состояние, бустеров осталось: ${state.undoBoostersCount}');
+  }
+
+  /// Переключить режим удаления фигуры
+  void toggleRemovalMode() {
+    if (!state.isRemovalModeActive && state.removeShapeBoostersCount <= 0) {
+      debugPrint('RemovalMode: Бустеры закончились');
+      return;
+    }
+
+    state = state.copyWith(isRemovalModeActive: !state.isRemovalModeActive);
+    debugPrint('RemovalMode: ${state.isRemovalModeActive ? "активирован" : "деактивирован"}');
+  }
+
+  /// Удалить фигуру из панели
+  void removeShape(GameShape shape) {
+    if (!state.isRemovalModeActive) {
+      debugPrint('RemoveShape: Режим удаления не активен');
+      return;
+    }
+
+    if (shape.isUsed) {
+      debugPrint('RemoveShape: Фигура уже использована');
+      return;
+    }
+
+    // Удаляем фигуру из списка доступных
+    final newShapes = state.availableShapes.where((s) => s.id != shape.id).toList();
+
+    // Уменьшаем счётчик бустеров и выключаем режим удаления
+    state = state.copyWith(
+      availableShapes: newShapes,
+      removeShapeBoostersCount: state.removeShapeBoostersCount - 1,
+      isRemovalModeActive: false,
+    );
+
+    debugPrint('RemoveShape: Фигура удалена, бустеров осталось: ${state.removeShapeBoostersCount}');
+
+    // Проверяем, остались ли доступные фигуры
+    final unusedShapes = newShapes.where((s) => !s.isUsed).toList();
+    if (unusedShapes.isEmpty) {
+      // Если все фигуры удалены/использованы - генерируем новые
+      Future.delayed(const Duration(milliseconds: 300), () {
+        final freshShapes = _generateShapesWithGuarantee();
+        state = state.copyWith(availableShapes: freshShapes);
+      });
+    }
+  }
+
+  /// Переключить режим наслаивания (размещение поверх существующих фигур)
+  void toggleOverlayMode() {
+    if (!state.isOverlayModeActive && state.placeOverlayBoostersCount <= 0) {
+      debugPrint('OverlayMode: Бустеры закончились');
+      return;
+    }
+
+    state = state.copyWith(isOverlayModeActive: !state.isOverlayModeActive);
+    debugPrint('OverlayMode: ${state.isOverlayModeActive ? "активирован" : "деактивирован"}');
+  }
+
   /// Проверить, можно ли разместить фигуру на позиции (row, col)
   bool canPlaceShape(GameShape shape, int row, int col) {
     // Если фигура уже использована - нельзя разместить
@@ -28,7 +112,12 @@ class GameNotifier extends StateNotifier<GameState> {
     if (row + shape.height > state.gridHeight) return false;
     if (col + shape.width > state.gridWidth) return false;
 
-    // Проверяем, не занята ли каждая клетка фигуры
+    // Если режим наслаивания активен - можно ставить поверх существующих фигур
+    if (state.isOverlayModeActive) {
+      return true;
+    }
+
+    // В обычном режиме проверяем, не занята ли каждая клетка фигуры
     for (int r = 0; r < shape.height; r++) {
       for (int c = 0; c < shape.width; c++) {
         if (shape.pattern[r][c]) {
@@ -48,6 +137,15 @@ class GameNotifier extends StateNotifier<GameState> {
     if (shape.isUsed) return;
 
     if (!canPlaceShape(shape, row, col)) return;
+
+    // Сохраняем текущее состояние в историю (без вложенной истории, чтобы избежать бесконечной рекурсии)
+    final historySnapshot = state.copyWith(history: []);
+    final newHistory = [...state.history, historySnapshot];
+
+    // Ограничиваем историю последними 10 ходами
+    if (newHistory.length > 10) {
+      newHistory.removeAt(0);
+    }
 
     // Копируем сетку
     final newGrid = GameState.copyGrid(state.grid);
@@ -69,12 +167,25 @@ class GameNotifier extends StateNotifier<GameState> {
       return s;
     }).toList();
 
-    // Обновляем состояние с использованными фигурами
+    // Проверяем, был ли активен режим наслаивания
+    final wasOverlayMode = state.isOverlayModeActive;
+    final newOverlayCount = wasOverlayMode
+        ? state.placeOverlayBoostersCount - 1
+        : state.placeOverlayBoostersCount;
+
+    // Обновляем состояние с использованными фигурами и историей
     state = state.copyWith(
       grid: newGrid,
       availableShapes: newShapes,
       moveCount: state.moveCount + 1,
+      history: newHistory,
+      isOverlayModeActive: false, // Отключаем режим наслаивания после размещения
+      placeOverlayBoostersCount: newOverlayCount,
     );
+
+    if (wasOverlayMode) {
+      debugPrint('OverlayMode: Фигура размещена поверх, бустеров осталось: $newOverlayCount');
+    }
 
     // Проверяем, все ли 3 фигуры использованы
     final allUsed = newShapes.every((s) => s.isUsed);

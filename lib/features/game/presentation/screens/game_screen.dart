@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../widgets/game_grid.dart';
 import '../../../settings/presentation/widgets/score_panel.dart';
 import '../widgets/shape_selector.dart';
+import '../widgets/power_ups_panel.dart';
 import '../../../settings/presentation/screens/settings_screen.dart';
 
 /// Главный экран игры
@@ -41,73 +42,104 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.getBackground(isDark),
-      body: Stack(
-        children: [
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Размеры компонентов
-                final scorePanelHeight = 100.0;
-                final shapeSelectorHeight = 100.0;
+      body: GestureDetector(
+        // Отключаем режим удаления/наслаивания при клике на любую область
+        onTap: () {
+          if (gameState.isRemovalModeActive) {
+            ref.read(gameProvider.notifier).toggleRemovalMode();
+          } else if (gameState.isOverlayModeActive) {
+            ref.read(gameProvider.notifier).toggleOverlayMode();
+          }
+        },
+        child: Stack(
+          children: [
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Размеры компонентов
+                  final scorePanelHeight = 100.0;
+                  final shapeSelectorHeight = 77.0;
+                  final powerUpsPanelHeight = 90.0;
 
-                return Column(
-                  children: [
-                    // Панель счёта
-                    Container(
-                      height: scorePanelHeight,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      child: ScorePanel(
-                        score: gameState.score,
-                        onNewGame: () => _showNewGameDialog(context, gameNotifier),
-                        onSettings: () => showSettingsDialog(context),
+                  return Column(
+                    children: [
+                      // Панель счёта
+                      Container(
+                        height: scorePanelHeight,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        child: ScorePanel(
+                          score: gameState.score,
+                          onSettings: () => showSettingsDialog(context),
+                        ),
                       ),
-                    ),
 
-                    // Игровое поле (адаптивное с отступами 20px)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Center(
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Stack(
-                              children: [
-                                // Сетка
-                                RepaintBoundary(
-                                  key: _gridKey,
-                                  child: GameGrid(grid: gameState.grid),
-                                ),
+                      // Игровое поле (адаптивное с отступами 20px)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          child: Center(
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Stack(
+                                children: [
+                                  // Сетка
+                                  RepaintBoundary(
+                                    key: _gridKey,
+                                    child: GameGrid(grid: gameState.grid),
+                                  ),
 
-                                // Перетаскиваемая фигура (внутри FittedBox)
-                                if (_draggingShape != null && _localDragPosition != null)
-                                  _buildDraggingShape(),
-                              ],
+                                  // Перетаскиваемая фигура (внутри FittedBox)
+                                  if (_draggingShape != null && _localDragPosition != null)
+                                    _buildDraggingShape(),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                    // Селектор фигур (компактный)
-                    SizedBox(
-                      height: shapeSelectorHeight,
-                      child: ShapeSelector(
-                        shapes: gameState.availableShapes,
-                        onShapeDragStart: _onShapeDragStart,
-                        onShapeDragUpdate: _onShapeDragUpdate,
-                        onShapeDragEnd: _onShapeDragEnd,
+                      // Селектор фигур
+                      SizedBox(
+                        height: shapeSelectorHeight,
+                        child: ShapeSelector(
+                          shapes: gameState.availableShapes,
+                          onShapeDragStart: _onShapeDragStart,
+                          onShapeDragUpdate: _onShapeDragUpdate,
+                          onShapeDragEnd: _onShapeDragEnd,
+                          onShapeTap: (shape) {
+                            ref.read(gameProvider.notifier).removeShape(shape);
+                          },
+                          isRemovalModeActive: gameState.isRemovalModeActive,
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
 
-          // Диалог окончания игры
-          if (gameState.gameOver)
-            _buildGameOverOverlay(context, gameState.score, gameNotifier),
-        ],
+                      // Панель Power-Ups (бустеры)
+                      Container(
+                        height: powerUpsPanelHeight,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        child: PowerUpsPanel(
+                          onUndo: _onUndo,
+                          onRemoveShape: _onRemoveShape,
+                          onPlaceOverlay: _onPlaceOverlay,
+                          onPowerUp4: () => _showNewGameDialog(context, gameNotifier),
+                          undoCount: gameState.undoBoostersCount,
+                          removeShapeCount: gameState.removeShapeBoostersCount,
+                          placeOverlayCount: gameState.placeOverlayBoostersCount,
+                          isRemovalModeActive: gameState.isRemovalModeActive,
+                          isOverlayModeActive: gameState.isOverlayModeActive,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            // Диалог окончания игры
+            if (gameState.gameOver)
+              _buildGameOverOverlay(context, gameState.score, gameNotifier),
+          ],
+        ),
       ),
     );
   }
@@ -177,6 +209,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _previewCol = null;
       _canPlace = false;
     });
+  }
+
+  /// Обработчик кнопки "Отменить ход"
+  void _onUndo() {
+    ref.read(gameProvider.notifier).undo();
+  }
+
+  /// Обработчик кнопки "Удалить фигуру"
+  void _onRemoveShape() {
+    ref.read(gameProvider.notifier).toggleRemovalMode();
+  }
+
+  /// Обработчик кнопки "Поставить поверх"
+  void _onPlaceOverlay() {
+    ref.read(gameProvider.notifier).toggleOverlayMode();
   }
 
   /// Обновить предпросмотр размещения

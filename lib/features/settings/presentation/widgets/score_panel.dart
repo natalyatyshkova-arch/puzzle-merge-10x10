@@ -7,13 +7,11 @@ import '../../../../core/theme/app_colors.dart';
 /// Панель счёта и управления
 class ScorePanel extends ConsumerWidget {
   final int score;
-  final VoidCallback onNewGame;
   final VoidCallback? onSettings;
 
   const ScorePanel({
     super.key,
     required this.score,
-    required this.onNewGame,
     this.onSettings,
   });
 
@@ -77,14 +75,10 @@ class ScorePanel extends ConsumerWidget {
             ),
           ),
 
-          // Кнопка рестарта справа
-          IconButton(
-            onPressed: onNewGame,
-            icon: const Icon(Icons.refresh_rounded),
-            iconSize: 32,
-            color: AppColors.getSecondary(isDark),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+          // Пустое место справа для симметрии
+          SizedBox(
+            width: 32,
+            height: 32,
           ),
         ],
       ),
