@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub:*)",
+      "Bash(flutter:*)",
+      "Bash(where flutter)",
+      "Bash(/c/Flutter_SDK/flutter/bin/flutter.bat pub get)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
