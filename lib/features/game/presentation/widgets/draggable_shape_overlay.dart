@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/shape.dart';
-import '../../theme/app_theme.dart';
+import '../../data/models/shape.dart';
+import '../../../../core/theme/app_theme.dart';
 
 /// Overlay для отображения перетаскиваемой фигуры
 class DraggableShapeOverlay extends StatelessWidget {

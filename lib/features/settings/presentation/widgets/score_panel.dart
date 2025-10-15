@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/localization_provider.dart';
-import '../../providers/settings_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../../localization/domain/providers/localization_provider.dart';
+import '../../domain/providers/settings_provider.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Панель счёта и управления
 class ScorePanel extends ConsumerWidget {

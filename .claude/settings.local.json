@@ -4,7 +4,9 @@
       "Bash(flutter pub:*)",
       "Bash(flutter:*)",
       "Bash(where flutter)",
-      "Bash(/c/Flutter_SDK/flutter/bin/flutter.bat pub get)"
+      "Bash(/c/Flutter_SDK/flutter/bin/flutter.bat pub get)",
+      "Bash(git remote add:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

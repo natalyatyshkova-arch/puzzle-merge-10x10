@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/settings_provider.dart';
-import 'theme/app_theme.dart';
-import 'ui/screens/game_screen.dart';
+import 'features/settings/domain/providers/settings_provider.dart';
+import 'core/theme/app_theme.dart';
+import 'features/game/presentation/screens/game_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

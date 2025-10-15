@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'settings_provider.dart';
+import '../../../settings/domain/providers/settings_provider.dart';
 
 /// Провайдер локализации
 final localizationProvider = Provider<AppLocalizations>((ref) {

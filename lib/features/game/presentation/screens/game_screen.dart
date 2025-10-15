@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/shape.dart';
-import '../../providers/game_provider.dart';
-import '../../providers/localization_provider.dart';
-import '../../providers/settings_provider.dart';
-import '../../theme/app_theme.dart';
-import '../../theme/app_colors.dart';
+import '../../data/models/shape.dart';
+import '../../domain/providers/game_provider.dart';
+import '../../../localization/domain/providers/localization_provider.dart';
+import '../../../settings/domain/providers/settings_provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../widgets/game_grid.dart';
-import '../widgets/score_panel.dart';
+import '../../../settings/presentation/widgets/score_panel.dart';
 import '../widgets/shape_selector.dart';
-import 'settings_screen.dart';
+import '../../../settings/presentation/screens/settings_screen.dart';
 
 /// Главный экран игры
 class GameScreen extends ConsumerStatefulWidget {

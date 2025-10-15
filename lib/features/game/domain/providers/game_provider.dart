@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/cell.dart';
-import '../models/game_state.dart';
-import '../models/shape.dart';
+import '../../data/models/cell.dart';
+import '../../data/models/game_state.dart';
+import '../../data/models/shape.dart';
 
 /// Provider для управления состоянием игры
 final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) {

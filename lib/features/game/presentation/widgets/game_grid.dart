@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/cell.dart';
-import '../../theme/app_theme.dart';
+import '../../data/models/cell.dart';
+import '../../../../core/theme/app_theme.dart';
 
 /// Виджет игровой сетки 10x10
 class GameGrid extends StatelessWidget {

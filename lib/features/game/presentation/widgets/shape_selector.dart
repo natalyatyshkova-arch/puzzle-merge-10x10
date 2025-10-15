@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/shape.dart';
-import '../../providers/settings_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../data/models/shape.dart';
+import '../../../settings/domain/providers/settings_provider.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'shape_widget.dart';
 
 /// Селектор фигур внизу экрана
