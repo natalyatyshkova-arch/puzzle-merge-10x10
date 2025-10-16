@@ -12,6 +12,9 @@ import '../../../settings/presentation/widgets/score_panel.dart';
 import '../widgets/shape_selector.dart';
 import '../widgets/power_ups_panel.dart';
 import '../../../settings/presentation/screens/settings_screen.dart';
+import '../../../shop/domain/providers/shop_provider.dart';
+import '../../../shop/presentation/widgets/currency_counter.dart';
+import '../../../shop/presentation/screens/shop_screen.dart';
 
 /// Главный экран игры
 class GameScreen extends ConsumerStatefulWidget {
