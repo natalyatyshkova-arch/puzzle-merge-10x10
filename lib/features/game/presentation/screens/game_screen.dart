@@ -142,6 +142,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             // Диалог окончания игры
             if (gameState.gameOver)
               _buildGameOverOverlay(context, gameState.score, gameNotifier),
+
+            // Магазин
+            if (ref.watch(shopProvider.select((s) => s.isShopOpen)))
+              const ShopScreen(),
           ],
         ),
       ),

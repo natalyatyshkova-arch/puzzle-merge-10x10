@@ -6,7 +6,12 @@
       "Bash(where flutter)",
       "Bash(/c/Flutter_SDK/flutter/bin/flutter.bat pub get)",
       "Bash(git remote add:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(git push:*)",
+      "Bash(tree:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd UI/UX Design System Agent and fix syntax error\n\nCreated UI/UX agent for design system:\n- Transforms design briefs into structured specifications\n- Uses only design tokens (no hardcoded values)\n- Generates YAML specs, QA checklists, preview plans, library cards\n- Enforces A11y standards (contrast, tap targets, focus)\n- Supports localization (RTL, long strings)\n- Proposes new tokens when needed\n\nFixed syntax error:\n- Removed accidental ''z'' character in main.dart import statement\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../localization/domain/providers/localization_provider.dart';
 import '../../domain/providers/settings_provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../shop/domain/providers/shop_provider.dart';
+import '../../../shop/presentation/widgets/currency_counter.dart';
 
 /// Панель счёта и управления
 class ScorePanel extends ConsumerWidget {
@@ -75,10 +77,11 @@ class ScorePanel extends ConsumerWidget {
             ),
           ),
 
-          // Пустое место справа для симметрии
-          SizedBox(
-            width: 32,
-            height: 32,
+          // Счётчик кристаллов справа
+          CurrencyCounter(
+            amount: ref.watch(shopProvider.select((s) => s.crystalBalance)),
+            onTap: () => ref.read(shopProvider.notifier).openShop(),
+            isDark: isDark,
           ),
         ],
       ),
