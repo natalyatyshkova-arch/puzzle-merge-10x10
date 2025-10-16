@@ -6,6 +6,7 @@ import '../../../localization/domain/providers/localization_provider.dart';
 import '../../../settings/domain/providers/settings_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_dialog.dart';
 import '../widgets/game_grid.dart';
 import '../../../settings/presentation/widgets/score_panel.dart';
 import '../widgets/shape_selector.dart';
@@ -406,94 +407,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   /// Показать диалог новой игры
-  void _showNewGameDialog(BuildContext context, GameNotifier notifier) {
+  Future<void> _showNewGameDialog(BuildContext context, GameNotifier notifier) async {
     final locale = ref.read(localizationProvider);
-    final isDark = ref.read(settingsProvider.select((s) => s.themeMode == ThemeMode.dark));
 
-    showDialog(
+    final result = await AppDialog.show(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: AppColors.getBackground(isDark),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                locale.newGameTitle,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.getPrimary(isDark),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                locale.newGameMessage,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTertiary(isDark),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        locale.cancel,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.getSecondary(isDark),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        notifier.newGame();
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.getAccent(isDark),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        locale.ok,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: locale.newGameTitle,
+      message: locale.newGameMessage,
+      icon: Icons.refresh_rounded,
+      confirmText: locale.ok,
+      cancelText: locale.cancel,
     );
+
+    if (result == true) {
+      notifier.newGame();
+    }
   }
 }

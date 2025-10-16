@@ -2,8 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../settings/domain/providers/settings_provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_design_system.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/counter_badge.dart';
+import '../../data/models/power_up_type.dart';
 
 /// Панель с power-ups (бустеры)
+///
+/// Отрефакторена для использования переиспользуемых компонентов:
+/// - AppButton для кнопок бустеров
+/// - CounterBadge для счетчиков
+/// - PowerUpType enum для типов бустеров
+/// - AppDesignSystem для размеров и отступов
 class PowerUpsPanel extends ConsumerWidget {
   final VoidCallback? onUndo;
   final VoidCallback? onRemoveShape;
@@ -33,172 +43,72 @@ class PowerUpsPanel extends ConsumerWidget {
     final isDark = ref.watch(settingsProvider.select((s) => s.themeMode == ThemeMode.dark));
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDesignSystem.paddingSmall,
+        vertical: AppDesignSystem.paddingMedium,
+      ),
       decoration: BoxDecoration(
-        color: AppColors.getSurface(isDark).withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.getSurface(isDark).withValues(
+          alpha: AppDesignSystem.backgroundOpacity,
+        ),
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusLarge),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildPowerUpButton(
-            icon: Icons.undo_rounded,
-            color: const Color(0xFF4ECDC4), // Бирюзовый
+            type: PowerUpType.undo,
             onTap: onUndo,
-            isDark: isDark,
             count: undoCount,
-            isRemovalButton: false,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: AppDesignSystem.spacingMedium),
           _buildPowerUpButton(
-            icon: Icons.delete_outline_rounded,
-            color: const Color(0xFFFF6B6B), // Красный
+            type: PowerUpType.removeShape,
             onTap: onRemoveShape,
-            isDark: isDark,
             count: removeShapeCount,
-            isRemovalButton: true,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: AppDesignSystem.spacingMedium),
           _buildPowerUpButton(
-            icon: Icons.layers_rounded,
-            color: const Color(0xFFFFE66D), // Жёлтый
+            type: PowerUpType.overlay,
             onTap: onPlaceOverlay,
-            isDark: isDark,
             count: placeOverlayCount,
-            isRemovalButton: false,
-            isOverlayButton: true,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: AppDesignSystem.spacingMedium),
           _buildPowerUpButton(
-            icon: Icons.refresh_rounded,
-            color: const Color(0xFFAA96DA), // Фиолетовый
+            type: PowerUpType.newGame,
             onTap: onPowerUp4,
-            isDark: isDark,
             count: null, // У кнопки "Начать заново" нет счётчика
-            isRemovalButton: false,
           ),
         ],
       ),
     );
   }
 
-  /// Построить кнопку power-up
+  /// Построить кнопку power-up с использованием переиспользуемых компонентов
   Widget _buildPowerUpButton({
-    required IconData icon,
-    required Color color,
+    required PowerUpType type,
     required VoidCallback? onTap,
-    required bool isDark,
     int? count,
-    required bool isRemovalButton,
-    bool isOverlayButton = false,
   }) {
-    final showBuyButton = count != null && count <= 0;
+    // Определяем, нужно ли затемнить кнопку
+    final shouldDim = (isRemovalModeActive && !type.isRemovalButton) ||
+        (isOverlayModeActive && !type.isOverlayButton);
 
-    // Если режим удаления активен, и это НЕ кнопка удаления - делаем прозрачной на 40%
-    // Если режим наслаивания активен, и это НЕ кнопка наслаивания - делаем прозрачной на 40%
-    final shouldDim = (isRemovalModeActive && !isRemovalButton) ||
-                      (isOverlayModeActive && !isOverlayButton);
-    final opacity = shouldDim ? 0.4 : 1.0;
+    // Создаём бейдж если есть счётчик
+    final badge = count != null
+        ? CounterBadge(
+            count: count,
+            showBuyButton: true, // Показываем кнопку покупки когда count == 0
+          )
+        : null;
 
-    return Opacity(
-      opacity: opacity,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: shouldDim ? null : onTap, // Отключаем нажатие для затемненных кнопок
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF8BB4EB), // Светлый голубой сверху
-                      Color(0xFF738BD8), // Тёмный голубой снизу
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-              // Счётчик или кнопка покупки
-              if (count != null)
-                Positioned(
-                  top: -6,
-                  right: -6,
-                  child: showBuyButton
-                      ? _buildBuyButton()
-                      : _buildCounterBadge(count),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Построить счётчик бустеров
-  Widget _buildCounterBadge(int count) {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: Colors.orange,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          count.toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            height: 1.0,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Построить кнопку покупки
-  Widget _buildBuyButton() {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: Colors.green,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 16,
-        ),
-      ),
+    return AppButton(
+      icon: type.icon,
+      color: type.color,
+      onTap: onTap,
+      enabled: !shouldDim,
+      badge: badge,
+      usePrimaryGradient: true, // Используем стандартный градиент
     );
   }
 }
